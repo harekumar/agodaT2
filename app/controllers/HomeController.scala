@@ -1,12 +1,13 @@
 package controllers
 
+
 import javax.inject._
 
-import dal.HotelRepository
 import play.api.Logger
 import play.api.i18n._
 import play.api.libs.json.Json
-import play.api.mvc._
+import play.api.mvc.{Action, Controller}
+import services.HotelService
 
 import scala.concurrent.ExecutionContext
 
@@ -15,7 +16,7 @@ import scala.concurrent.ExecutionContext
  * application's home page.
  */
 @Singleton
-class HomeController @Inject() (repo: HotelRepository, val messagesApi: MessagesApi)
+class HomeController @Inject() (hs: HotelService, val messagesApi: MessagesApi)
                                (implicit ec: ExecutionContext) extends Controller with I18nSupport {
 
   /**
@@ -23,26 +24,17 @@ class HomeController @Inject() (repo: HotelRepository, val messagesApi: Messages
    */
   def index(city: Option[String], sort: Option[String], order: Option[String]) = Action.async {
 
-    Logger.debug("--------------------")
-    Logger.debug(city.toString)
-    Logger.debug(sort.toString)
-    Logger.debug(order.toString)
-    Logger.debug("--------------------")
-
     val od:String = if(!order.isEmpty && order.isDefined) order.get else "asc"
+    val c:String = if(city.isDefined && !city.isEmpty) city.get else ""
 
-    if (city.isDefined && !city.isEmpty) {
+    Logger.debug("--------------------")
+    Logger.debug(od)
+    Logger.debug(c)
+    Logger.debug("--------------------")
 
-      repo.getHotelsByCityOrderByPrice(city.get, od).map { h =>
-        Ok(Json.toJson(h))
-      }
-
-    } else {
-      repo.list(od).map { h =>
-        Ok(Json.toJson(h))
-      }
+    hs.getHotels(c, od).map { h =>
+      Ok(Json.toJson(h))
     }
-
   }
 
 }

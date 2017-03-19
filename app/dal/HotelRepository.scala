@@ -44,6 +44,16 @@ class HotelRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(impli
 
   }
 
+  def listHotelOrderByPriceDESC(): Future[Seq[Hotel]] = db.run {
+    hotel.sortBy(h => h.price.desc).result
+  }
+
+  def listHotelOrderByPriceASC(): Future[Seq[Hotel]] = db.run {
+      hotel.sortBy(h => h.price.asc).result
+  }
+
+
+
   def getHotelsByCityOrderByPrice(cityName: String, od: String): Future[Seq[Hotel]] = db.run {
 
     if(od.toLowerCase() == "desc") {
@@ -52,5 +62,13 @@ class HotelRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(impli
       hotel.filter(_.city === cityName).sortBy(h => h.price.asc).result
     }
 
+  }
+
+  def getHotelsByCityOrderByPriceASC(cityName: String): Future[Seq[Hotel]] = db.run {
+      hotel.filter(_.city === cityName).sortBy(h => h.price.asc).result
+  }
+
+  def getHotelsByCityOrderByPriceDESC(cityName: String): Future[Seq[Hotel]] = db.run {
+    hotel.filter(_.city === cityName).sortBy(h => h.price.desc).result
   }
 }
