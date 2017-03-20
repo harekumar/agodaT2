@@ -1,0 +1,30 @@
+
+Api request and response format:
+
+Method: GET
+RequestHeader: token
+Optional query parameter: city & order
+URL: http://localhost:9000?city=New Delhi&order=desc
+
+Response:
+[
+  {
+    "id": 3,
+    "city": "New Delhi",
+    "room": "Honeymoon Suite",
+    "price": 20000
+  },
+  {
+    "id": 1,
+    "city": "New Delhi",
+    "room": "Deleuxe",
+    "price": 1000
+  }
+]
+
+Note:
+
+TODO:
+1. Implement token authentication
+2. Add a generic exception handler
+3.

@@ -7,6 +7,7 @@ import akka.stream.Materializer
 import play.api.Logger
 import play.api.cache._
 import play.api.mvc._
+import services.ConfigService
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -22,29 +23,39 @@ import scala.concurrent.{ExecutionContext, Future}
   * It is used below by the `map` method.
   */
 @Singleton
-class ApiRateLimitFilter @Inject()(
-                                    implicit override val mat: Materializer,
-                                    exec: ExecutionContext, cache: CacheApi) extends Filter {
+class ApiRateLimitFilter @Inject()(cs: ConfigService,
+                                   implicit override val mat: Materializer,
+                                   exec: ExecutionContext, cache: CacheApi) extends Filter {
+
+  // Per Defined constants
+  val globalApiRateLimitCounter:Int = 10
+  val globalThresholdApiTimeLimit:Long = 10000 // In milliseconds i.e 10 Seconds
 
   override def apply(nextFilter: RequestHeader => Future[Result])
                     (requestHeader: RequestHeader): Future[Result] = {
-    // Run the next filter in the chain. This will call other filters
-    // and eventually call the action. Take the result and modify it
-    // by adding a new header.
     Logger.debug("-------- Inside api rate limit filter method ------------")
     Logger.debug("")
 
-    val token:String = requestHeader.headers.get("token").toString
+
+    val t:Option[String] = requestHeader.headers.get("token")
 
     if(requestHeader.headers.get("token").isEmpty && !requestHeader.headers.get("token").isDefined) {
       Logger.debug("Token not found in headers!!! ")
-      Future.failed(throw new Exception("Token not found!"))
+      Future.failed(throw new Exception("Token not found in headers!"))
     } else {
       Logger.debug("Token found in headers")
 
-      // Per Defined constants
-      val thresholdApiLimit:Int = 10
-      val thresholdApiTimeLimit:Long = 10000 // In milliseconds i.e 10 Seconds
+      /*** To make token specific configuration, read the token configuration from DB & then put it in cache for easy access
+        *
+        */
+      val token:String = t.get
+
+      var al:Int = -1
+      if (cache.get(s"config:$token").isEmpty) cs.getConfigByToken(token) else al = cache.get[Int](s"config:$token").get
+
+      val apiLimit:Int = if(al != -1) al else globalApiRateLimitCounter
+
+      Logger.debug(s"apiLimt: $apiLimit")
 
       var count:Int = 1
       val cacheVal:Option[String] = cache.get[String](token)
@@ -78,21 +89,22 @@ class ApiRateLimitFilter @Inject()(
           *  If count has still less than threshold && timeDifference is greater than the threshold limit then it is clearly a low api usage
           *  case. Hence remove the existing key & set the new key with new time.
           *
-          *  In all other case just set the expiry of key to the timeDifference, Hence the key will be automatically removed & user
+          *  In all other case just set the expiry of key to the timeDifference or as per the requirement i.e 5Min, Hence the key will be automatically removed & user
           *  can access thereafter.
           */
 
         if(isActive) {
-          if (count <= thresholdApiLimit && timeDiff <= thresholdApiTimeLimit ) {
+          if (count <= apiLimit && timeDiff <= globalThresholdApiTimeLimit ) {
             cacheValStr = s"$count:true:$timeOfFirstApiAccess"
             cache.set(token, cacheValStr)
-          } else if (timeDiff > thresholdApiTimeLimit && count <= thresholdApiLimit) {
+          } else if (timeDiff > globalThresholdApiTimeLimit && count <= apiLimit) {
             Logger.debug("Removing cache key")
             cache.remove(token)
             cache.set(token, cacheValStr)
           } else {
+            Logger.debug("Suspending api for the next 5 minutes")
             cacheValStr = s"$count:false:$timeOfFirstApiAccess"
-            cache.set(token, cacheValStr, Duration((currTime-timeOfFirstApiAccess), MILLISECONDS))
+            cache.set(token, cacheValStr, Duration(5, MINUTES))
           }
         } else {
 
@@ -106,7 +118,6 @@ class ApiRateLimitFilter @Inject()(
       }
 
       Logger.debug(token + ":" + cache.get(token).toString)
-
       Logger.debug("-------- Inside api rate limit filter method ------------")
       Logger.debug("")
     }

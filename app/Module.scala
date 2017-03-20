@@ -24,6 +24,7 @@ class Module extends AbstractModule {
     // Set AtomicCounter as the implementation for Counter.
     bind(classOf[Counter]).to(classOf[AtomicCounter])
     bind(classOf[HotelService]).to(classOf[HotelServiceImpl])
+    bind(classOf[ConfigService]).to(classOf[ConfigServiceImpl])
   }
 
 }
