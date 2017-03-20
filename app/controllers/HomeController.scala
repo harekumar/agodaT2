@@ -3,7 +3,6 @@ package controllers
 
 import javax.inject._
 
-import play.api.Logger
 import play.api.i18n._
 import play.api.libs.json.Json
 import play.api.mvc.{Action, Controller}
@@ -22,15 +21,11 @@ class HomeController @Inject() (hs: HotelService, val messagesApi: MessagesApi)
   /**
    * Create an Action to render all the listed hotels in JSON format.
    */
-  def index(city: Option[String], sort: Option[String], order: Option[String]) = Action.async {
+  def index(city: Option[String], sort: Option[String],
+            order: Option[String]) = Action.async { implicit request =>
 
     val od:String = if(!order.isEmpty && order.isDefined) order.get else "asc"
     val c:String = if(city.isDefined && !city.isEmpty) city.get else ""
-
-    Logger.debug("--------------------")
-    Logger.debug(od)
-    Logger.debug(c)
-    Logger.debug("--------------------")
 
     hs.getHotels(c, od).map { h =>
       Ok(Json.toJson(h))

@@ -34,34 +34,12 @@ class HotelRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(impli
 
   private val hotel = TableQuery[HotelTable]
 
-  def list(od: String): Future[Seq[Hotel]] = db.run {
-
-    if(od.toLowerCase() == "desc") {
-      hotel.sortBy(h => h.price.desc).result
-    } else {
-      hotel.sortBy(h => h.price.asc).result
-    }
-
-  }
-
   def listHotelOrderByPriceDESC(): Future[Seq[Hotel]] = db.run {
     hotel.sortBy(h => h.price.desc).result
   }
 
   def listHotelOrderByPriceASC(): Future[Seq[Hotel]] = db.run {
       hotel.sortBy(h => h.price.asc).result
-  }
-
-
-
-  def getHotelsByCityOrderByPrice(cityName: String, od: String): Future[Seq[Hotel]] = db.run {
-
-    if(od.toLowerCase() == "desc") {
-      hotel.filter(_.city === cityName).sortBy(h => h.price.desc).result
-    } else {
-      hotel.filter(_.city === cityName).sortBy(h => h.price.asc).result
-    }
-
   }
 
   def getHotelsByCityOrderByPriceASC(cityName: String): Future[Seq[Hotel]] = db.run {
