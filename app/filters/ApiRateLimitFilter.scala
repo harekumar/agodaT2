@@ -52,7 +52,7 @@ class ApiRateLimitFilter @Inject()(cs: ConfigService,
 
       val apiLimit:Int = if(al != -1) al else globalApiRateLimitCounter
 
-      Logger.debug(s"apiLimt: $apiLimit")
+      Logger.debug(s"apiLimit: $apiLimit")
 
       var count:Int = 1
       val cacheVal:Option[String] = cache.get[String](token)
